@@ -28,7 +28,7 @@ export default function MonthCalendar({
 
   const [gardenData, setGardenData] = useState<Record<string, GardenDayData>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [journeyStartDate, setJourneyStartDate] = useState<string>('');
   const [viewMode, setViewMode] = useState<'week' | 'month'>(initialViewMode);
 
@@ -39,9 +39,6 @@ export default function MonthCalendar({
   // Calculate the first and last day of the month
   const firstDay = new Date(currentYear, currentMonth, 1);
   const lastDay = new Date(currentYear, currentMonth + 1, 0);
-
-  // Get month name
-  const monthName = firstDay.toLocaleString('default', { month: 'long' });
 
   // Get today's date to highlight the current day and use live points
   const today = new Date();

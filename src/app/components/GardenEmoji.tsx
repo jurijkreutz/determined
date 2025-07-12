@@ -46,9 +46,6 @@ export default function GardenEmoji({ date, points, className = '' }: GardenEmoj
     fetchGardenData();
   }, [date]);
 
-  // If we have the actual points for today (not yet stored in garden data), use them
-  const displayPoints = points !== undefined ? points : (gardenData?.points || 0);
-
   // For today, calculate the emoji based on current points if garden data isn't available
   const getEmoji = () => {
     if (gardenData && gardenData.emoji) {

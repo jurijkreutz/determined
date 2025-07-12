@@ -10,14 +10,22 @@ const options = {};
 let client;
 let clientPromise: Promise<MongoClient>;
 
+// Define a type for the global object with our custom property
+interface CustomNodeJsGlobal extends NodeJS.Global {
+  _mongoClientPromise?: Promise<MongoClient>;
+}
+
+// Use the custom type for the global object
+const globalWithMongo = global as CustomNodeJsGlobal;
+
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
   // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  if (!(global as any)._mongoClientPromise) {
+  if (!globalWithMongo._mongoClientPromise) {
     client = new MongoClient(uri, options);
-    (global as any)._mongoClientPromise = client.connect();
+    globalWithMongo._mongoClientPromise = client.connect();
   }
-  clientPromise = (global as any)._mongoClientPromise;
+  clientPromise = globalWithMongo._mongoClientPromise as Promise<MongoClient>;
 } else {
   // In production mode, it's best to not use a global variable.
   client = new MongoClient(uri, options);

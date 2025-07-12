@@ -166,7 +166,7 @@ export default function Home() {
 
         {/* Daily Suggestion Slots */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Today's Priorities</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Today&apos;s Priorities</h2>
           <DailySuggestionSlots onActivityAdded={handleActivityAdded} />
         </div>
 
@@ -255,7 +255,7 @@ export default function Home() {
                   onClick={handleExpiredCommitmentFailed}
                   className="w-full sm:w-1/2 py-2 px-4 border border-red-300 text-red-600 dark:text-red-400 dark:border-red-700/50 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
-                  No, I'll donate €{expiredCommitment.amount}
+                  No, I&apos;ll donate €{expiredCommitment.amount}
                 </button>
               </div>
             </div>

@@ -137,8 +137,8 @@ export function calculateStreakStatus(
 
   // Get previous day's streak data to build upon
   const prevDayData = gardenStore[previousDates[0]];
-  let prevStreakCount = prevDayData?.streakCount || 0;
-  let prevStreakStatus = prevDayData?.streakStatus || 'active';
+  const prevStreakCount = prevDayData?.streakCount || 0;
+  const prevStreakStatus = prevDayData?.streakStatus || 'active';
 
   // Default values
   let streakCount = 0;

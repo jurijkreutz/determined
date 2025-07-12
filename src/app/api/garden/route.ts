@@ -4,11 +4,9 @@ import {
   getGardenEmoji,
   hasStreakProtection,
   hasRecoveryBonus,
-  RECOVERY_TASK_IDS,
   calculateStreakStatus,
   isProductiveDay
 } from '@/app/utils/gardenUtils';
-import { UserActivity } from '@/app/types/activities';
 import clientPromise from '@/app/utils/mongodb';
 
 // Get garden data for a specific date or range
@@ -78,7 +76,7 @@ export async function POST(request: NextRequest) {
     const db = client.db('determined');
 
     // Check if we already have data for this date
-    let gardenDay = await db.collection('garden').findOne({ date });
+    const gardenDay = await db.collection('garden').findOne({ date });
 
     // Process activities to determine garden status
     const totalPoints = points || 0;
