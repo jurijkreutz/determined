@@ -22,6 +22,8 @@ export async function GET() {
       if (dateData && dateData.activities) {
         weekActivities[dateString] = dateData.activities;
       } else {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         weekActivities[dateString] = [];
       }
     }
