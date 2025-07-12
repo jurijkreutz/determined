@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserActivity, DailyActivityCount, WeeklyActivityCount } from '@/app/types/activities';
+import { UserActivity } from '@/app/types/activities';
 import { getActivityById, calculateDiminishedPoints } from '@/app/data/predefinedActivities';
 import clientPromise from '@/app/utils/mongodb';
 
@@ -66,16 +66,17 @@ export async function GET(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db('determined');
 
-    let dateData = await db.collection('activities').findOne({ date });
+    // Find or create date data
+    const existingData = await db.collection('activities').findOne({ date });
 
-    if (!dateData) {
-      dateData = {
-        date,
-        activities: [],
-        activityCounts: {}
-      };
+    const dateData = existingData || {
+      date,
+      activities: [],
+      activityCounts: {}
+    };
 
-      // Initialize the document for this date
+    // If we needed to create a new record, insert it
+    if (!existingData) {
       await db.collection('activities').insertOne(dateData);
     }
 
@@ -101,16 +102,16 @@ export async function POST(request: NextRequest) {
     const db = client.db('determined');
 
     // Get current data for this date
-    let dateData = await db.collection('activities').findOne({ date });
+    const existingData = await db.collection('activities').findOne({ date });
 
-    if (!dateData) {
-      dateData = {
-        date,
-        activities: [],
-        activityCounts: {}
-      };
+    const dateData = existingData || {
+      date,
+      activities: [],
+      activityCounts: {}
+    };
 
-      // Initialize the document for this date
+    // If we needed to create a new record, insert it
+    if (!existingData) {
       await db.collection('activities').insertOne(dateData);
     }
 
@@ -153,7 +154,9 @@ export async function POST(request: NextRequest) {
       await db.collection('activities').updateOne(
         { date },
         {
-          $push: { activities: newActivity },
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-expect-error
+          $push: { "activities": newActivity },
           $inc: { [`activityCounts.${activityId}`]: 1 }
         }
       );
@@ -183,7 +186,9 @@ export async function POST(request: NextRequest) {
       // Update daily activities
       await db.collection('activities').updateOne(
         { date },
-        { $push: { activities: newActivity } }
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-expect-error
+        { $push: { "activities": newActivity } }
       );
 
       return NextResponse.json({ success: true, activity: newActivity });
@@ -277,6 +282,8 @@ export async function DELETE(request: NextRequest) {
     // Remove the activity from the list
     await db.collection('activities').updateOne(
       { date },
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
       { $pull: { activities: { id } } }
     );
 

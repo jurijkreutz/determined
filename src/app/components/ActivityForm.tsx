@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { PredefinedActivity } from '../types/activities';
 import { PREDEFINED_ACTIVITIES } from '../data/predefinedActivities';
 import Snackbar from './Snackbar';

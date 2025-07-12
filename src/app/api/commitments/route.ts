@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import clientPromise from '@/app/utils/mongodb';
 
 // GET all commitments
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db('determined');

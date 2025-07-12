@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/app/utils/mongodb';
 
 // Get activities for the past 7 days directly from MongoDB
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db('determined');
 
     const today = new Date();
-    const weekActivities: Record<string, any> = {};
+    const weekActivities: Record<string, Record<string, unknown>> = {};
 
     // Get activities for the past 7 days
     for (let i = 0; i < 7; i++) {

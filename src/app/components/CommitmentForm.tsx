@@ -144,7 +144,7 @@ export default function CommitmentForm({ onCommitmentAdded }: CommitmentFormProp
             />
           </div>
           <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
-            If you don't complete this commitment by the deadline, you'll need to donate this amount to charity.
+            If you don&apos;t complete this commitment by the deadline, you&apos;ll need to donate this amount to charity.
           </p>
         </div>
 

@@ -115,7 +115,7 @@ export default function DailySuggestionSlots({ onActivityAdded }: DailySuggestio
   const determineDynamicSlot = (
     yesterdayActivities: UserActivity[],
     weekActivities: Record<string, UserActivity[]>
-  ): PredefinedActivity | null => {
+  ): PredefinedActivity | undefined => {
     // Check if yesterday had a hypertrophy workout (F1)
     const hadWorkoutYesterday = yesterdayActivities.some(activity => activity.activityId === 'F1');
 
@@ -163,7 +163,7 @@ export default function DailySuggestionSlots({ onActivityAdded }: DailySuggestio
       );
 
       // Return the first activity from the category with the lowest points
-      return activitiesInCategory.length > 0 ? activitiesInCategory[0] : null;
+      return activitiesInCategory.length > 0 ? activitiesInCategory[0] : undefined;
     }
   };
 
