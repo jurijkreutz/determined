@@ -5,7 +5,8 @@ import {
   hasStreakProtection,
   hasRecoveryBonus,
   calculateStreakStatus,
-  isProductiveDay
+  isProductiveDay,
+  RECOVERY_TASK_IDS
 } from '@/app/utils/gardenUtils';
 import clientPromise from '@/app/utils/mongodb';
 
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       // Convert array to object with dates as keys
       const monthObject: Record<string, GardenDayData> = {};
       monthData.forEach(item => {
-        monthObject[item.date] = item as GardenDayData;
+        monthObject[item.date] = item as unknown as GardenDayData;
       });
 
       return NextResponse.json(monthObject);
@@ -80,10 +81,17 @@ export async function POST(request: NextRequest) {
 
     // Process activities to determine garden status
     const totalPoints = points || 0;
-    const hasProtection = streakProtection || hasStreakProtection(activities);
-    const hasBonus = recoveryBonus || hasRecoveryBonus(activities);
-    const productive = isProductiveDay(totalPoints);
 
+    // Count recovery tasks in activities
+    const recoveryTaskCount = Array.isArray(activities) ?
+      activities.filter(a => a.activityId && RECOVERY_TASK_IDS.includes(a.activityId)).length : 0;
+
+    // Get emoji for the day based on points
+    const dayEmoji = emoji || getGardenEmoji(totalPoints);
+
+    const hasProtection = streakProtection || hasStreakProtection(dayEmoji, recoveryTaskCount);
+    const hasBonus = recoveryBonus || hasRecoveryBonus(dayEmoji, recoveryTaskCount);
+    isProductiveDay(totalPoints);
     // Get previous day's data to calculate streak
     const previousDate = new Date(date);
     previousDate.setDate(previousDate.getDate() - 1);
@@ -91,24 +99,38 @@ export async function POST(request: NextRequest) {
 
     const previousDay = await db.collection('garden').findOne({ date: prevDateStr });
 
+    // Create current day data object
+    const currentData: GardenDayData = {
+      date,
+      points: totalPoints,
+      emoji: dayEmoji,
+      recoveryTaskCount,
+      hasStreakProtection: hasProtection,
+      hasBonus
+    };
+
+    // Create a garden store with previous days' data
+    const gardenStore: Record<string, GardenDayData> = {};
+    if (previousDay) {
+      gardenStore[prevDateStr] = previousDay as unknown as GardenDayData;
+    }
+
     // Calculate streak status
-    const { streakDays, streakActive } = calculateStreakStatus(
-      previousDay?.streakDays || 0,
-      previousDay?.streakActive || false,
-      productive,
-      hasProtection
+    const { streakCount: streakDays, streakStatus: streakActive } = calculateStreakStatus(
+      currentData,
+      gardenStore
     );
 
     // Create or update garden data
     const gardenData: GardenDayData = {
       date,
       points: totalPoints,
-      productive,
-      emoji: emoji || getGardenEmoji(totalPoints),
-      streakDays,
-      streakActive,
-      streakProtection: hasProtection,
-      recoveryBonus: hasBonus
+      emoji: dayEmoji,
+      recoveryTaskCount,
+      streakCount: streakDays,
+      streakStatus: streakActive,
+      hasStreakProtection: hasProtection,
+      hasBonus: hasBonus
     };
 
     // Save to database
