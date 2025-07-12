@@ -11,12 +11,12 @@ let client;
 let clientPromise: Promise<MongoClient>;
 
 // Define a type for the global object with our custom property
-interface CustomNodeJsGlobal extends NodeJS.Global {
+interface CustomNodeJsGlobal {
   _mongoClientPromise?: Promise<MongoClient>;
 }
 
-// Use the custom type for the global object
-const globalWithMongo = global as CustomNodeJsGlobal;
+// Use the correct type for the global object
+const globalWithMongo = global as unknown as CustomNodeJsGlobal;
 
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
