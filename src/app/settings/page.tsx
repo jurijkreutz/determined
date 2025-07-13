@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import BackupRestore from '../components/BackupRestore';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -88,7 +89,7 @@ export default function SettingsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
           <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Settings</h1>
 
           {message.text && (
@@ -138,6 +139,11 @@ export default function SettingsPage() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Backup & Restore Section */}
+        <div className="max-w-md mx-auto">
+          <BackupRestore />
         </div>
       </main>
     </div>
