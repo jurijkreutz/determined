@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GardenDayData, getGardenEmoji } from '../utils/gardenUtils';
+import { GardenDayData } from '../utils/gardenUtils';
 import GardenEmoji from './GardenEmoji';
+import DayDetailsPopup from './DayDetailsPopup';
 
 interface MonthCalendarProps {
   month?: number; // 0-11, defaults to current month
@@ -32,6 +33,25 @@ export default function MonthCalendar({
   const [journeyStartDate, setJourneyStartDate] = useState<string>('');
   const [viewMode, setViewMode] = useState<'week' | 'month'>(initialViewMode);
 
+  // State for the day details popup
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  // Open day details popup
+  const openDayDetails = (date: string) => {
+    setSelectedDate(date);
+    setIsPopupOpen(true);
+  };
+
+  // Close day details popup
+  const closeDayDetails = () => {
+    setIsPopupOpen(false);
+    // Wait for animation to complete before clearing the selected date
+    setTimeout(() => {
+      setSelectedDate(null);
+    }, 300);
+  };
+
   // Current actual month/year (not for display)
   const currentMonth = month !== undefined ? month : now.getMonth();
   const currentYear = year !== undefined ? year : now.getFullYear();
@@ -59,14 +79,18 @@ export default function MonthCalendar({
     const fetchMonthData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/garden?range=month');
+        // Format the month as a 2-digit string (01-12)
+        const monthString = String(currentDisplayMonth + 1).padStart(2, '0');
+
+        // Include year and month parameters in the request
+        const response = await fetch(`/api/garden?range=month&year=${currentDisplayYear}&month=${monthString}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch garden data');
         }
 
         const data = await response.json();
-        setGardenData(data.month || {});
+        setGardenData(data || {});
       } catch (error) {
         console.error('Error fetching garden data:', error);
         // Even if there's an error, we'll continue with empty data
@@ -278,43 +302,32 @@ export default function MonthCalendar({
 
                   {dayData.gardenData ? (
                     <div className="flex items-center justify-center h-full">
-                      <div className="text-3xl">
-                        {/* For today, use live points to determine the emoji */}
-                        {dayData.date === todayString
-                          ? getGardenEmoji(currentDayPoints)
-                          : dayData.gardenData.emoji
-                        }
-
-                        {/* Show recovery bonus indicator */}
-                        {dayData.gardenData.hasBonus && (
-                          <span
-                            className="absolute -top-1 right-2 text-xs"
-                            role="img"
-                            aria-label="Recovery bonus"
-                          >
-                            🍃
-                          </span>
-                        )}
-
-                        {/* Show streak protection indicator */}
-                        {dayData.gardenData.hasStreakProtection && !dayData.gardenData.hasBonus && (
-                          <span
-                            className="absolute -top-1 right-2 text-xs"
-                            role="img"
-                            aria-label="Streak protected"
-                          >
-                            ✓
-                          </span>
-                        )}
-                      </div>
+                      <GardenEmoji
+                        date={dayData.date}
+                        points={dayData.date === todayString ? currentDayPoints : dayData.gardenData.points}
+                        className="text-2xl"
+                        showPoints={true}
+                        onClick={() => openDayDetails(dayData.date)} // Open details on click
+                      />
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full">
                       {/* For today, use current points to determine the emoji */}
                       {dayData.date === todayString ? (
-                        <div className="text-2xl">{getGardenEmoji(currentDayPoints)}</div>
+                        <GardenEmoji
+                          date={dayData.date}
+                          points={currentDayPoints}
+                          className="text-2xl"
+                          showPoints={true}
+                          onClick={() => openDayDetails(dayData.date)} // Open details on click
+                        />
                       ) : (
-                        <GardenEmoji date={dayData.date} className="text-2xl opacity-70" />
+                        <GardenEmoji
+                          date={dayData.date}
+                          className="text-2xl opacity-70"
+                          showPoints={true}
+                          onClick={() => openDayDetails(dayData.date)} // Open details on click
+                        />
                       )}
                     </div>
                   )}
@@ -324,6 +337,15 @@ export default function MonthCalendar({
           );
         })}
       </div>
+
+      {/* Day details popup */}
+      {selectedDate && (
+        <DayDetailsPopup
+          date={selectedDate}
+          onClose={closeDayDetails}
+          isOpen={isPopupOpen}
+        />
+      )}
     </div>
   );
 }

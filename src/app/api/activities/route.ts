@@ -57,6 +57,26 @@ async function hasReachedCap(activityId: string, date: string): Promise<{ reache
   }
 }
 
+// Helper function to sync garden data after activity changes
+async function syncGardenData(date: string, origin: string) {
+  try {
+    // Call the garden sync endpoint
+    const response = await fetch(`${origin}/api/garden/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ date }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to sync garden data:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error syncing garden data:', error);
+  }
+}
+
 // Get activities for a specific date
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -115,6 +135,7 @@ export async function POST(request: NextRequest) {
       await db.collection('activities').insertOne(dateData);
     }
 
+    let result;
     // Handle either predefined or custom activity
     if (activityId) {
       // This is a predefined activity
@@ -170,7 +191,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ success: true, activity: newActivity });
+      result = { success: true, activity: newActivity };
     } else {
       // This is a custom activity
       const newActivity: UserActivity = {
@@ -191,8 +212,13 @@ export async function POST(request: NextRequest) {
         { $push: { "activities": newActivity } }
       );
 
-      return NextResponse.json({ success: true, activity: newActivity });
+      result = { success: true, activity: newActivity };
     }
+
+    // Sync garden data after adding the activity
+    await syncGardenData(date, request.nextUrl.origin);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error adding activity:', error);
     return NextResponse.json({ error: 'Failed to add activity' }, { status: 500 });
@@ -202,92 +228,61 @@ export async function POST(request: NextRequest) {
 // Delete an activity
 export async function DELETE(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const id = searchParams.get('id');
+  const activityId = searchParams.get('id');
   const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
-  const weekStart = getStartOfWeek(new Date(date));
 
-  if (!id) {
-    return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+  if (!activityId) {
+    return NextResponse.json({ success: false, error: 'Activity ID is required' }, { status: 400 });
   }
 
   try {
     const client = await clientPromise;
     const db = client.db('determined');
 
-    // Get current data for this date
-    const dateData = await db.collection('activities').findOne({ date });
+    // Get current activities for this date
+    const existingData = await db.collection('activities').findOne({ date });
 
-    if (!dateData) {
+    if (!existingData || !existingData.activities || existingData.activities.length === 0) {
       return NextResponse.json({ success: false, error: 'No activities found for this date' }, { status: 404 });
     }
 
     // Find the activity to delete
-    const activityToDelete = dateData.activities.find((a: UserActivity) => a.id === id);
+    const activityToDelete = existingData.activities.find((a: UserActivity) => a.id === activityId);
 
     if (!activityToDelete) {
       return NextResponse.json({ success: false, error: 'Activity not found' }, { status: 404 });
     }
 
-    if (activityToDelete.activityId !== 'custom') {
-      // Decrement the count for this activity type
-      await db.collection('activities').updateOne(
-        { date },
-        { $inc: { [`activityCounts.${activityToDelete.activityId}`]: -1 } }
-      );
+    // Remove the activity from the array
+    const updatedActivities = existingData.activities.filter((a: UserActivity) => a.id !== activityId);
 
-      // Decrement weekly count if applicable
+    // Update activity counts if it's a predefined activity
+    const updates: Record<string, unknown> = { $set: { activities: updatedActivities } };
+
+    if (activityToDelete.activityId && activityToDelete.activityId !== 'custom') {
+      updates.$inc = { [`activityCounts.${activityToDelete.activityId}`]: -1 };
+    }
+
+    // Update the database
+    await db.collection('activities').updateOne({ date }, updates);
+
+    // If it's a predefined activity with a weekly cap, update the weekly count
+    if (activityToDelete.activityId && activityToDelete.activityId !== 'custom') {
       const predefinedActivity = getActivityById(activityToDelete.activityId);
+
       if (predefinedActivity?.weeklyCap !== undefined) {
+        const weekStart = getStartOfWeek(new Date(date));
         await db.collection('weeklyActivityCounts').updateOne(
           { weekStart },
           { $inc: { [activityToDelete.activityId]: -1 } }
         );
       }
-
-      // Recalculate points for remaining activities of this type to maintain proper diminishing returns
-      if (predefinedActivity) {
-        // Get remaining activities of this type
-        const activitiesOfSameType = dateData.activities
-          .filter((a: UserActivity) => a.activityId === activityToDelete.activityId && a.id !== id)
-          .sort((a: UserActivity, b: UserActivity) => a.timestamp - b.timestamp);
-
-        // Reset counts and recalculate
-        let count = 0;
-        const updates = [];
-
-        for (const activity of activitiesOfSameType) {
-          const { points, factor } = calculateDiminishedPoints(predefinedActivity, count);
-
-          updates.push({
-            updateOne: {
-              filter: { date, "activities.id": activity.id },
-              update: {
-                $set: {
-                  "activities.$.points": points,
-                  "activities.$.diminishingFactor": factor
-                }
-              }
-            }
-          });
-
-          count++;
-        }
-
-        if (updates.length > 0) {
-          await db.collection('activities').bulkWrite(updates);
-        }
-      }
     }
 
-    // Remove the activity from the list
-    await db.collection('activities').updateOne(
-      { date },
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-      { $pull: { activities: { id } } }
-    );
+    // Sync garden data after deleting the activity
+    await syncGardenData(date, request.nextUrl.origin);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Activity deleted successfully' });
   } catch (error) {
     console.error('Error deleting activity:', error);
     return NextResponse.json({ error: 'Failed to delete activity' }, { status: 500 });

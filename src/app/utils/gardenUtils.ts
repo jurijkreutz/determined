@@ -8,6 +8,7 @@ export const PRODUCTIVE_DAY_THRESHOLD = 51; // Points needed for a day to count 
 export const STREAK_PAUSE_DAYS = 2; // Number of consecutive low-point days to pause streak
 export const STREAK_RESET_DAYS = 3; // Number of consecutive low-point days to reset streak
 export const MIN_PRODUCTIVE_DAYS_PER_WEEK = 4; // Minimum productive days needed in a 7-day window
+export const MORNING_CUTOFF_HOUR = 12; // Hour (0-23) before which we show morning messages
 
 // Function to get the appropriate emoji based on points
 export function getGardenEmoji(points: number): string {
@@ -59,15 +60,25 @@ export function getViennaDate(): string {
   return viennaTime.toISOString().split('T')[0];
 }
 
-// Check if it's time to refresh garden data (5:00 AM Vienna time)
-export function isGardenRefreshTime(): boolean {
+// Get current hour in Vienna timezone (0-23)
+export function getViennaHour(): number {
   const now = new Date();
   // Vienna is UTC+2
-  const viennaHour = (now.getUTCHours() + 2) % 24;
-  const viennaMinute = now.getUTCMinutes();
+  return (now.getUTCHours() + 2) % 24;
+}
+
+// Check if it's time to refresh garden data (5:00 AM Vienna time)
+export function isGardenRefreshTime(): boolean {
+  const viennaHour = getViennaHour();
+  const viennaMinute = new Date().getUTCMinutes();
 
   // Return true if it's between 5:00 AM and 5:05 AM Vienna time
   return viennaHour === 5 && viennaMinute < 5;
+}
+
+// Check if it's morning (before noon)
+export function isMorning(): boolean {
+  return getViennaHour() < MORNING_CUTOFF_HOUR;
 }
 
 // Streak Management Functions
@@ -103,6 +114,8 @@ export function calculateStreakStatus(
   const currentDate = currentData.date;
   const currentPoints = currentData.points;
   const hasProtection = currentData.hasStreakProtection;
+  const isCurrentDateToday = currentDate === getViennaDate();
+  const isMorningTime = isMorning();
 
   // Get previous 7 days for streak calculations
   const previousDates = getPreviousDates(currentDate, 7);
@@ -130,6 +143,10 @@ export function calculateStreakStatus(
 
   // Check for weekly minimum (at least 4 productive days in any 7-day window)
   const last7Days = [currentDate, ...previousDates.slice(0, 6)];
+  const daysWithData = last7Days.filter(date => {
+    return date === currentDate || gardenStore[date];
+  }).length;
+
   const productiveDaysInWeek = last7Days.filter(date => {
     const data = date === currentDate ? currentData : gardenStore[date];
     return data && (isProductiveDay(data.points) || data.hasStreakProtection);
@@ -144,6 +161,29 @@ export function calculateStreakStatus(
   let streakCount = 0;
   let streakStatus: 'active' | 'paused' | 'reset' = 'active';
   let streakMessage = '';
+
+  // Special case for today with 0 points in the morning
+  if (isCurrentDateToday && isMorningTime && currentPoints === 0) {
+    // For morning with no points yet, give encouraging message instead of streak warnings
+    streakStatus = prevStreakStatus;
+    streakCount = prevStreakCount;
+
+    // Different messages based on streak status
+    if (streakStatus === 'active' && streakCount > 0) {
+      streakMessage = "Good morning! Start the day by earning some points to maintain your streak!";
+    } else if (streakStatus === 'paused') {
+      streakMessage = "Good morning! Today's your chance to earn 51+ points and save your streak!";
+    } else {
+      streakMessage = "Have a great day! Start with earning some points!";
+    }
+
+    return {
+      streakCount,
+      streakStatus,
+      lowPointDaysInARow,
+      streakMessage
+    };
+  }
 
   // Rule 1: Current day is productive - increment or maintain streak
   if (isProductiveDay(currentPoints) || hasProtection) {
@@ -185,10 +225,33 @@ export function calculateStreakStatus(
   }
 
   // Rule 5: Fewer than 4 productive days in a 7-day window resets streak
-  if (productiveDaysInWeek < MIN_PRODUCTIVE_DAYS_PER_WEEK && last7Days.length === 7) {
+  // BUT only apply this rule if we have at least 7 days of data
+  if (productiveDaysInWeek < MIN_PRODUCTIVE_DAYS_PER_WEEK && daysWithData >= 7) {
     streakStatus = 'reset';
     streakCount = 0;
     streakMessage = 'Streak reset! Fewer than 4 productive days in the last week.';
+  }
+
+  // Special messaging for beginners (first week)
+  if (daysWithData < 7) {
+    // For beginners, provide encouragement instead of strict streak rules
+    if (isProductiveDay(currentPoints) || hasProtection) {
+      // Productive day messaging for beginners
+      if (streakCount === 1) {
+        streakMessage = "Great start! You've begun your productivity journey!";
+      } else if (streakCount === 2) {
+        streakMessage = "Two days in a row! You're building momentum!";
+      } else if (streakCount === 3) {
+        streakMessage = "Three-day streak! You're establishing a pattern!";
+      }
+    } else if (lowPointDaysInARow === 1) {
+      // More gentle messaging for first low-point day in the beginning
+      if (isCurrentDateToday && isMorningTime && currentPoints === 0) {
+        streakMessage = "Have a great day! Start with earning some points!";
+      } else {
+        streakMessage = "Rest day! Try for a productive day tomorrow.";
+      }
+    }
   }
 
   return {

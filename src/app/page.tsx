@@ -41,10 +41,8 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          date: currentDate,
-          activityId: 'QUEST',
           customName: 'Mystery Quest Completed',
-          points
+          customPoints: points
         }),
       });
 

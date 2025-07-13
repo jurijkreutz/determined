@@ -1,17 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GardenDayData } from '../utils/gardenUtils';
+import { GardenDayData, getGardenEmoji } from '../utils/gardenUtils';
+import { UserActivity } from '../types/activities';
 
 interface GardenEmojiProps {
   date: string;
   points?: number;
   className?: string;
+  showPoints?: boolean; // New prop to control points display
+  onClick?: () => void; // New prop to handle click events
 }
 
-export default function GardenEmoji({ date, points, className = '' }: GardenEmojiProps) {
+export default function GardenEmoji({ date, points, className = '', showPoints = true, onClick }: GardenEmojiProps) {
   const [gardenData, setGardenData] = useState<GardenDayData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasHypertrophyWorkout, setHasHypertrophyWorkout] = useState(false);
 
   useEffect(() => {
     const fetchGardenData = async () => {
@@ -46,39 +51,102 @@ export default function GardenEmoji({ date, points, className = '' }: GardenEmoj
     fetchGardenData();
   }, [date]);
 
+  // Check if the day has a hypertrophy workout
+  useEffect(() => {
+    const checkForHypertrophyWorkout = async () => {
+      try {
+        const response = await fetch(`/api/activities?date=${date}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Check if any of the activities has activityId "F1" (Hypertrophy workout)
+          const hasWorkout = data.activities?.some(
+            (activity: UserActivity) => activity.activityId === 'F1'
+          );
+          setHasHypertrophyWorkout(!!hasWorkout);
+        }
+      } catch (error) {
+        console.error('Error checking for hypertrophy workout:', error);
+      }
+    };
+
+    if (date) {
+      checkForHypertrophyWorkout();
+    }
+  }, [date]);
+
   // For today, calculate the emoji based on current points if garden data isn't available
   const getEmoji = () => {
-    if (gardenData && gardenData.emoji) {
-      return gardenData.emoji;
+    // First check if we have garden data with points
+    if (gardenData && gardenData.points !== undefined) {
+      // Always recalculate emoji based on points to ensure consistency
+      return getGardenEmoji(gardenData.points);
     }
 
     // For current day without saved data, use provisional emoji based on points
     if (points !== undefined) {
-      if (points <= 50) return '🌱';
-      if (points <= 80) return '🌿';
-      if (points <= 110) return '🌸';
-      if (points <= 130) return '🌳';
-      return '🌴';
+      return getGardenEmoji(points);
     }
 
     return '🌱'; // Default to seedling for empty days
   };
 
+  // Get the points to display
+  const getPointsValue = () => {
+    if (gardenData && gardenData.points !== undefined) {
+      return gardenData.points;
+    }
+
+    return points || 0;
+  };
+
   const emoji = getEmoji();
+  const pointsValue = getPointsValue();
 
   // Show loading state
   if (isLoading) {
     return <span className={`inline-block opacity-50 ${className}`}>...</span>;
   }
 
-  // If there's bonus points from previous day
-  const hasBonus = gardenData?.bonusPoints;
+  // Determine if this component should be clickable
+  const isClickable = !!onClick;
 
   return (
-    <div className={`relative inline-block ${className}`}>
-      <span className="text-2xl" role="img" aria-label="Garden emoji">
-        {emoji}
-      </span>
+    <div
+      className={`
+        relative inline-block ${className}
+        ${isClickable ? 'cursor-pointer transition-transform duration-150' : ''}
+        ${isClickable && isHovered ? 'transform scale-110' : ''}
+      `}
+      onClick={onClick}
+      onMouseEnter={() => isClickable && setIsHovered(true)}
+      onMouseLeave={() => isClickable && setIsHovered(false)}
+      title={isClickable ? "Click to view day details" : ""}
+    >
+      <div className="flex flex-col items-center">
+        <span className="text-2xl" role="img" aria-label="Garden emoji">
+          {emoji}
+        </span>
+
+        {/* Points display with optional workout indicator */}
+        {showPoints && pointsValue > 0 && (
+          <div className="relative">
+            <span className={`
+              text-xs font-medium rounded-full px-1.5 py-0.5 mt-1
+              ${isClickable ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}
+            `}>
+              {pointsValue}
+              {hasHypertrophyWorkout && " 💪"}
+            </span>
+          </div>
+        )}
+
+        {/* Show workout indicator without points */}
+        {showPoints && pointsValue === 0 && hasHypertrophyWorkout && (
+          <span className="text-xs mt-1" title="Hypertrophy workout completed">
+            💪
+          </span>
+        )}
+      </div>
 
       {/* Show recovery bonus indicator */}
       {gardenData?.hasBonus && (
@@ -99,16 +167,6 @@ export default function GardenEmoji({ date, points, className = '' }: GardenEmoj
           aria-label="Streak protected"
         >
           ✓
-        </span>
-      )}
-
-      {/* Show bonus points received */}
-      {hasBonus && (
-        <span
-          className="absolute -top-1 -right-1 text-xs font-bold text-green-500"
-          title="Bonus points from yesterday's recovery"
-        >
-          +5
         </span>
       )}
     </div>
