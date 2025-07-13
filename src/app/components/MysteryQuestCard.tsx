@@ -10,13 +10,14 @@
  * - Shows difficulty level indicator (🟢, 🟡, 🔴)
  * - Allows users to mark quests as completed to earn points
  * - Features fun animation effects when claiming rewards
- * - Persists completion status in localStorage
+ * - Persists completion status in both localStorage and database
  * - Provides option to skip quests that don't interest the user
+ * - Syncs quest status across different browsers and devices
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MysteryQuest, getDailyQuest } from '../data/mysteryQuests';
 import { useRef } from 'react';
 
@@ -30,28 +31,74 @@ export default function MysteryQuestCard({ date, onQuestCompleted }: MysteryQues
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [showQuest, setShowQuest] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Fetch mystery quest status from the API
+  const fetchQuestStatus = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/mystery-quest-status?date=${date}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data) {
+          // Update states based on database data
+          setIsCompleted(data.completed || false);
+          setShowQuest(!data.skipped);
+
+          // Also sync with localStorage
+          localStorage.setItem(`quest_completed_${date}`, data.completed ? 'true' : 'false');
+          localStorage.setItem(`quest_skipped_${date}`, data.skipped ? 'true' : 'false');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch mystery quest status:', error);
+      // Fall back to localStorage if API fails
+      const completedStatus = localStorage.getItem(`quest_completed_${date}`);
+      if (completedStatus === 'true') {
+        setIsCompleted(true);
+      }
+
+      const skippedStatus = localStorage.getItem(`quest_skipped_${date}`);
+      if (skippedStatus === 'true') {
+        setShowQuest(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [date]);
+
+  // Update mystery quest status in the database
+  const updateQuestStatus = async (completed: boolean, skipped: boolean) => {
+    try {
+      const response = await fetch('/api/mystery-quest-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date,
+          completed,
+          skipped,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update mystery quest status in database');
+      }
+    } catch (error) {
+      console.error('Error updating mystery quest status:', error);
+    }
+  };
 
   // Get the daily quest on component mount or date change
   useEffect(() => {
-    // Check if the quest was already completed today
-    const completedStatus = localStorage.getItem(`quest_completed_${date}`);
-    if (completedStatus === 'true') {
-      setIsCompleted(true);
-    } else {
-      setIsCompleted(false);
-    }
+    // Set the daily quest
+    setQuest(getDailyQuest(date));
 
-    // Check if the quest was skipped today
-    const skippedStatus = localStorage.getItem(`quest_skipped_${date}`);
-    if (skippedStatus === 'true') {
-      setShowQuest(false);
-    } else {
-      setShowQuest(true);
-      // Set the daily quest
-      setQuest(getDailyQuest(date));
-    }
-  }, [date]);
+    // Fetch quest status from API
+    fetchQuestStatus();
+  }, [date, fetchQuestStatus]);
 
   // Handle claiming the quest reward
   const handleClaimReward = () => {
@@ -68,8 +115,9 @@ export default function MysteryQuestCard({ date, onQuestCompleted }: MysteryQues
         // Award points
         onQuestCompleted(quest.points);
 
-        // Mark as completed in local storage
+        // Mark as completed in local storage and database
         localStorage.setItem(`quest_completed_${date}`, 'true');
+        updateQuestStatus(true, false);
 
         // Update state
         setIsCompleted(true);
@@ -81,10 +129,19 @@ export default function MysteryQuestCard({ date, onQuestCompleted }: MysteryQues
   // Handle skipping the quest
   const handleSkipQuest = () => {
     localStorage.setItem(`quest_skipped_${date}`, 'true');
+    updateQuestStatus(false, true);
     setShowQuest(false);
   };
 
-  // Don't show anything if no quest or if it was skipped
+  // Don't show anything if no quest, if it was skipped, or while loading
+  if (isLoading) {
+    return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6 animate-pulse">
+      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-4"></div>
+      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+    </div>;
+  }
+
   if (!quest || !showQuest) {
     return null;
   }
