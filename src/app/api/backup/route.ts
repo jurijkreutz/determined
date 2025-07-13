@@ -55,6 +55,8 @@ async function collectionToCsv(collectionName: string) {
       data.map(item => {
         // Remove _id as it's not used
         const rest = { ...item };
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         delete rest._id;
         return stringifyDocumentFields(rest);
       })
@@ -134,7 +136,6 @@ export async function POST(request: NextRequest) {
 
         // Insert new data, parsing JSON fields if needed
         const parsedData = data.map((doc) => parseJsonFields(collectionName, doc));
-        // @ts-expect-error: MongoDB insertMany expects documents to match the collection schema
         await db.collection(collectionName).insertMany(parsedData);
       }
     }
