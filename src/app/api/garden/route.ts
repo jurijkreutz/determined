@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate streak status
-    const { streakCount: streakDays, streakStatus: streakActive } = calculateStreakStatus(
+    const { streakCount: streakDays, streakStatus: streakActive, streakMessage } = calculateStreakStatus(
       currentData,
       gardenStore
     );
@@ -129,6 +129,7 @@ export async function POST(request: NextRequest) {
       recoveryTaskCount,
       streakCount: streakDays,
       streakStatus: streakActive,
+      streakMessage, // Include the streak message
       hasStreakProtection: hasProtection,
       hasBonus: hasBonus
     };

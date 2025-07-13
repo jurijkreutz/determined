@@ -9,6 +9,7 @@ export const STREAK_PAUSE_DAYS = 2; // Number of consecutive low-point days to p
 export const STREAK_RESET_DAYS = 3; // Number of consecutive low-point days to reset streak
 export const MIN_PRODUCTIVE_DAYS_PER_WEEK = 4; // Minimum productive days needed in a 7-day window
 export const MORNING_CUTOFF_HOUR = 12; // Hour (0-23) before which we show morning messages
+export const EVENING_HOUR = 18; // Hour after which we consider the day nearly over
 
 // Function to get the appropriate emoji based on points
 export function getGardenEmoji(points: number): string {
@@ -79,6 +80,11 @@ export function isGardenRefreshTime(): boolean {
 // Check if it's morning (before noon)
 export function isMorning(): boolean {
   return getViennaHour() < MORNING_CUTOFF_HOUR;
+}
+
+// Check if it's evening (after the evening cutoff hour)
+export function isEvening(): boolean {
+  return getViennaHour() >= EVENING_HOUR;
 }
 
 // Streak Management Functions
@@ -210,7 +216,18 @@ export function calculateStreakStatus(
   else if (lowPointDaysInARow === 1) {
     streakStatus = 'active';
     streakCount = prevStreakCount;
-    streakMessage = 'Low-point day. One more and your streak will pause.';
+
+    // More motivational messaging during the day, "rest day" only in evening
+    if (isCurrentDateToday) {
+      if (isEvening()) {
+        streakMessage = 'Rest day! Try for a productive day tomorrow.';
+      } else {
+        const pointsNeeded = PRODUCTIVE_DAY_THRESHOLD - currentPoints;
+        streakMessage = `You need ${pointsNeeded} more points today to maintain your productivity streak!`;
+      }
+    } else {
+      streakMessage = 'Low-point day. One more and your streak will pause.';
+    }
   }
   else if (lowPointDaysInARow === 2) {
     streakStatus = 'paused';
@@ -246,8 +263,15 @@ export function calculateStreakStatus(
       }
     } else if (lowPointDaysInARow === 1) {
       // More gentle messaging for first low-point day in the beginning
-      if (isCurrentDateToday && isMorningTime && currentPoints === 0) {
-        streakMessage = "Have a great day! Start with earning some points!";
+      if (isCurrentDateToday) {
+        if (isMorningTime && currentPoints === 0) {
+          streakMessage = "Have a great day! Start with earning some points!";
+        } else if (isEvening()) {
+          streakMessage = "Rest day! Try for a productive day tomorrow.";
+        } else {
+          const pointsNeeded = PRODUCTIVE_DAY_THRESHOLD - currentPoints;
+          streakMessage = `Just ${pointsNeeded} more points needed today to have a productive day!`;
+        }
       } else {
         streakMessage = "Rest day! Try for a productive day tomorrow.";
       }
