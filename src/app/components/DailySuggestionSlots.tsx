@@ -1,3 +1,18 @@
+/**
+ * DailySuggestionSlots Component
+ *
+ * This component displays a set of daily suggested activities for the user to complete.
+ * It shows both fixed daily suggestions and a dynamically selected activity based on
+ * category weighting and what the user hasn't done recently.
+ *
+ * Key features:
+ * - Presents three fixed suggestion slots for daily core habits
+ * - Provides a dynamic fourth slot that intelligently suggests activities
+ * - Tracks which suggestions have been completed for the current day
+ * - Allows quick logging of suggested activities with a single click
+ * - Shows completion status with visual indicators
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

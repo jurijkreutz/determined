@@ -1,3 +1,21 @@
+/**
+ * ActivityForm Component
+ *
+ * This component provides a form interface for users to log both predefined and custom activities.
+ * It allows users to select from a categorized list of predefined activities or create custom
+ * activities with user-defined names and point values.
+ *
+ * Key features:
+ * - Toggle between predefined and custom activity modes
+ * - Category-based organization of predefined activities
+ * - Validation for required fields
+ * - Error and success feedback via Snackbar component
+ * - Point history display and activity tracking
+ *
+ * The component communicates with the backend API to save activities and
+ * notifies the parent component when an activity is added via the onActivityAdded callback.
+ */
+
 'use client';
 
 import { useState } from 'react';

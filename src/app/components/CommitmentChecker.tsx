@@ -1,3 +1,19 @@
+/**
+ * CommitmentChecker Component
+ *
+ * This component silently monitors all active commitments and checks for any that have
+ * expired (passed their end date). When an expired commitment is found, it notifies
+ * the parent component via the onCommitmentExpired callback.
+ *
+ * Key features:
+ * - Periodically checks for expired commitments in the background
+ * - Uses localStorage to track which expired commitments have already been reported
+ * - Prevents duplicate notifications for the same expired commitment
+ * - Re-checks commitments when the refreshTrigger changes
+ *
+ * This component doesn't render any UI elements - it works silently in the background.
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

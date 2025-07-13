@@ -1,3 +1,19 @@
+/**
+ * Snackbar Component
+ *
+ * This component provides a toast notification system that displays messages
+ * briefly before automatically dismissing them. It supports different types of
+ * notifications (success, error, info) with appropriate styling.
+ *
+ * Key features:
+ * - Shows toast notifications for user feedback
+ * - Supports different message types with color-coded styling
+ * - Auto-dismisses after configurable duration
+ * - Provides manual close button
+ * - Smooth entrance and exit animations
+ * - Fully accessible with appropriate ARIA attributes
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

@@ -1,3 +1,17 @@
+/**
+ * GardenRefresher Component
+ *
+ * This utility component automatically handles the daily garden data refresh at 5 AM Vienna time.
+ * It runs silently in the background and doesn't render any UI elements.
+ *
+ * Key features:
+ * - Performs automated daily garden data synchronization
+ * - Handles streak calculations and updates
+ * - Runs at specific time (5 AM Vienna time) to ensure consistent data processing
+ * - Uses localStorage to track the last refresh date and prevent duplicate refreshes
+ * - Makes API calls to trigger garden data processing on the server
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

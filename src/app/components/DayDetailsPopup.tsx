@@ -1,3 +1,17 @@
+/**
+ * DayDetailsPopup Component
+ *
+ * This component displays a modal popup with detailed information about a specific day,
+ * including all activities completed, total points earned, and the garden emoji status.
+ *
+ * Key features:
+ * - Shows a list of all activities completed on the selected date
+ * - Displays total points earned for the day
+ * - Shows the garden emoji representation of productivity
+ * - Provides a clean modal interface with outside click detection for closing
+ * - Handles loading states while fetching activity data
+ */
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';

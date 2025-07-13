@@ -1,3 +1,15 @@
+/**
+ * AboutBox Component
+ *
+ * This component renders a simple informational box that provides a brief description
+ * of the "determined" application. It displays the application's purpose as a personal
+ * goal tracker and supporter for managing activities, commitments, and progress tracking.
+ *
+ * The component uses a clean card design with appropriate dark mode support through
+ * Tailwind CSS classes. It's primarily used on the main page to give context about
+ * the application's purpose.
+ */
+
 // filepath: /Users/jkreutz/determined/src/app/components/AboutBox.tsx
 import React from 'react';
 

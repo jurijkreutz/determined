@@ -1,3 +1,19 @@
+/**
+ * MysteryQuestCard Component
+ *
+ * This component displays a daily mystery quest card that presents users with
+ * a randomly selected challenge that changes each day. Completing these quests
+ * awards bonus points.
+ *
+ * Key features:
+ * - Displays a daily random quest based on the current date
+ * - Shows difficulty level indicator (🟢, 🟡, 🔴)
+ * - Allows users to mark quests as completed to earn points
+ * - Features fun animation effects when claiming rewards
+ * - Persists completion status in localStorage
+ * - Provides option to skip quests that don't interest the user
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

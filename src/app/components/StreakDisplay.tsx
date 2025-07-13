@@ -1,3 +1,18 @@
+/**
+ * StreakDisplay Component
+ *
+ * This component displays the user's current productivity streak status, including
+ * the streak count, status (active/paused/reset), and motivational messages.
+ *
+ * Key features:
+ * - Shows the current streak count (consecutive productive days)
+ * - Displays the streak status with appropriate styling
+ * - Provides contextual motivational messages based on streak status
+ * - Refreshes when new activities are added (via refreshTrigger)
+ * - Handles loading states appropriately
+ * - Visually indicates different streak statuses with appropriate colors
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

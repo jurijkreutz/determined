@@ -1,3 +1,19 @@
+/**
+ * GardenEmoji Component
+ *
+ * This component displays an appropriate plant emoji based on a day's productivity level.
+ * It's a visual representation of daily point totals, showing growth from seedling (low points)
+ * to palm tree (high points).
+ *
+ * Key features:
+ * - Fetches or calculates the appropriate emoji based on points for a given date
+ * - Handles both historical data (from API) and live data (from current points prop)
+ * - Shows optional tooltips with point information on hover
+ * - Supports click interactions for viewing day details
+ * - Visually indicates days with hypertrophy workouts with a special marker
+ * - Supports custom styling through className prop
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

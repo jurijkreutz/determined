@@ -1,3 +1,19 @@
+/**
+ * MonthCalendar Component
+ *
+ * This component displays a calendar view showing daily productivity levels using garden emojis.
+ * It can display in either week or month view, allowing users to navigate through time and
+ * see their productivity history.
+ *
+ * Key features:
+ * - Displays garden emojis for each day representing productivity levels
+ * - Supports both week view and month view with easy toggling
+ * - Allows navigation between months/weeks with previous/next buttons
+ * - Shows the current month/year and updates the display accordingly
+ * - Enables clicking on days to view detailed information via popup
+ * - Updates in real-time as new activities are added to the current day
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

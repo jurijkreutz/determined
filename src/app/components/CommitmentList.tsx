@@ -1,3 +1,18 @@
+/**
+ * CommitmentList Component
+ *
+ * This component displays a list of the user's active and completed commitments.
+ * It allows users to mark commitments as completed or failed, and tracks their progress.
+ *
+ * Key features:
+ * - Fetches and displays all commitments from the database
+ * - Groups commitments by status (active vs. completed)
+ * - Provides UI for marking commitments as completed or failed
+ * - Shows deadline information and countdown for active commitments
+ * - Refreshes automatically when commitments are added/updated
+ * - Provides feedback via Snackbar component for status changes
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

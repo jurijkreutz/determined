@@ -1,3 +1,18 @@
+/**
+ * CommitmentForm Component
+ *
+ * This component provides a form interface for users to create new commitments/goals.
+ * It allows setting a goal description, target end date, and point value for completing
+ * the commitment.
+ *
+ * Key features:
+ * - Form for creating goal-based commitments with deadlines
+ * - Date validation to ensure end dates are in the future
+ * - Input validation for required fields
+ * - Feedback via Snackbar component for success/error states
+ * - Notifies parent component when a commitment is added via onCommitmentAdded callback
+ */
+
 'use client';
 
 import { useState } from 'react';

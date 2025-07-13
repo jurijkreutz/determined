@@ -1,3 +1,19 @@
+/**
+ * ActivityList Component
+ *
+ * This component displays a list of activities logged by the user for a specific date.
+ * It fetches activity data from the API and presents it in a chronological list,
+ * showing each activity's name and point value.
+ *
+ * Key features:
+ * - Fetches and displays activities for a selected date
+ * - Shows total points accumulated for the day
+ * - Updates automatically when new activities are added (via refreshTrigger)
+ * - Displays a Garden emoji representing the productivity level for the day
+ * - Notifies parent components about point updates via onPointsUpdate callback
+ * - Handles loading states and empty states appropriately
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';
