@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Determined is a productivity tracking application built with Next.js, React 19, MongoDB, and TailwindCSS. The application helps users track their daily activities, manage commitments, and visualize their productivity through a unique "Grow-a-Garden" metaphor where productivity levels are represented by different plant emojis.
+Determined is a productivity tracking application built with Next.js, React 19, MongoDB, and TailwindCSS. The application helps users track their daily activities and visualize their productivity through a unique "Grow-a-Garden" metaphor where productivity levels are represented by different plant emojis.
 
 ## Tech Stack
 
@@ -15,11 +15,10 @@ Determined is a productivity tracking application built with Next.js, React 19, 
 ## Core Features
 
 1. **Activity Tracking**: Log predefined or custom activities with point values
-2. **Commitment System**: Set goals with deadlines and track their completion
-3. **Grow-a-Garden**: Visualize productivity with plant emojis based on daily point totals
-4. **Streak Management**: Track consecutive productive days
-5. **Mystery Quests**: Daily challenges with point rewards
-6. **Calendar View**: Monthly and weekly views of productivity garden
+2. **Grow-a-Garden**: Visualize productivity with plant emojis based on daily point totals
+3. **Streak Management**: Track consecutive productive days
+4. **Mystery Quests**: Daily challenges with point rewards
+5. **Calendar View**: Monthly and weekly views of productivity garden
 
 ## Folder Structure
 
@@ -30,7 +29,6 @@ determined/
 │   └── app/              # Next.js App Router structure
 │       ├── api/          # API routes
 │       │   ├── activities/       # Activity-related endpoints
-│       │   ├── commitments/      # Commitment-related endpoints
 │       │   ├── garden/           # Garden/streak-related endpoints
 │       │   └── settings/         # User settings endpoints
 │       ├── components/           # React components
@@ -61,12 +59,6 @@ determined/
 - **ActivityList.tsx**: Displays logged activities for a given day
 - **predefinedActivities.ts**: Contains definitions of all predefined activities with point values
 
-### Commitment System
-
-- **CommitmentForm.tsx**: Form for creating new commitments/goals
-- **CommitmentList.tsx**: Displays active commitments
-- **CommitmentChecker.tsx**: Checks for expired commitments
-
 ### Garden & Streak System
 
 - **GardenEmoji.tsx**: Displays appropriate plant emoji based on day's points
@@ -93,12 +85,6 @@ determined/
 - **POST /api/activities**: Creates a new activity
 - **GET /api/activities/week**: Gets activity data for the current week
 
-### Commitments API
-
-- **GET /api/commitments**: Retrieves all commitments
-- **POST /api/commitments**: Creates a new commitment
-- **PATCH /api/commitments**: Updates a commitment's status
-
 ### Garden API
 
 - **GET /api/garden**: Gets garden data for a specific date or range
@@ -113,10 +99,6 @@ The application uses several activity models:
 - **PredefinedActivity**: Template for an activity (id, name, category, points, etc.)
 - **UserActivity**: Recorded instance of an activity with timestamp
 - **DailyActivityCount**: Tracks how many times each activity was performed in a day
-
-### Commitments
-
-- **Commitment**: Represents a goal with end date, amount, and completion status
 
 ### Garden
 
@@ -155,17 +137,13 @@ Based on daily point totals:
 
 1. **Main Page Flow**: 
    - `page.tsx` integrates all main components
-   - Activities and commitments feed into the garden visualization
+   - Activities feed into the garden visualization
 
 2. **Activity System Flow**:
    - `ActivityForm` → POST to `/api/activities` → Database → `ActivityList` (refresh)
    - Points update → `GardenEmoji` update
 
-3. **Commitment System Flow**:
-   - `CommitmentForm` → POST to `/api/commitments` → Database → `CommitmentList` (refresh)
-   - `CommitmentChecker` monitors for expired commitments
-
-4. **Garden System Flow**:
+3. **Garden System Flow**:
    - Activities generate points → `gardenUtils` calculates emoji and streak status
    - `GardenEmoji` displays appropriate plant
    - `MonthCalendar` shows monthly garden progress

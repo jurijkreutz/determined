@@ -3,8 +3,8 @@ import clientPromise from '@/app/utils/mongodb';
 import Papa from 'papaparse';
 
 // Helper to deeply stringify objects/arrays in a document
-function stringifyDocumentFields(doc: any) {
-  const result: any = {};
+function stringifyDocumentFields(doc: Record<string, unknown>) {
+  const result: Record<string, unknown> = {};
   for (const key in doc) {
     if (!Object.prototype.hasOwnProperty.call(doc, key)) continue;
     const value = doc[key];
@@ -18,18 +18,18 @@ function stringifyDocumentFields(doc: any) {
 }
 
 // Helper to parse JSON fields for specific collections
-function parseJsonFields(collectionName: string, doc: any) {
+function parseJsonFields(collectionName: string, doc: Record<string, unknown>) {
   // Define which fields need to be parsed for each collection
   const jsonFields: Record<string, string[]> = {
     activities: ['activities', 'activityCounts'],
     // Add more collections/fields here if needed
   };
   const fields = jsonFields[collectionName] || [];
-  const result: any = { ...doc };
+  const result: Record<string, unknown> = { ...doc };
   for (const field of fields) {
     if (typeof result[field] === 'string') {
       try {
-        result[field] = JSON.parse(result[field]);
+        result[field] = JSON.parse(result[field] as string);
       } catch {
         // Leave as string if parsing fails
       }
@@ -53,7 +53,9 @@ async function collectionToCsv(collectionName: string) {
     // Convert to CSV format using papaparse, stringifying objects/arrays
     const csv = Papa.unparse(
       data.map(item => {
-        const { _id, ...rest } = item;
+        // Remove _id as it's not used
+        const rest = { ...item };
+        delete rest._id;
         return stringifyDocumentFields(rest);
       })
     );
@@ -69,7 +71,7 @@ async function collectionToCsv(collectionName: string) {
 export async function GET() {
   try {
     // List of collections to backup
-    const collections = ['activities', 'weeklyActivityCounts', 'commitments', 'garden', 'settings'];
+    const collections = ['activities', 'weeklyActivityCounts', 'garden', 'settings'];
 
     // Create a single CSV file with sections for each collection
     let fullBackup = '';
@@ -124,15 +126,15 @@ export async function POST(request: NextRequest) {
       const csvContent = lines.slice(1).join('\n');
 
       // Parse CSV back to JSON
-      const { data } = Papa.parse(csvContent, { header: true, dynamicTyping: true });
+      const { data } = Papa.parse<Record<string, unknown>>(csvContent, { header: true, dynamicTyping: true });
 
       if (data.length > 0) {
         // Clear existing collection data
         await db.collection(collectionName).deleteMany({});
 
         // Insert new data, parsing JSON fields if needed
-        const parsedData = data.map((doc: any) => parseJsonFields(collectionName, doc));
-        // @ts-ignore
+        const parsedData = data.map((doc) => parseJsonFields(collectionName, doc));
+        // @ts-expect-error: MongoDB insertMany expects documents to match the collection schema
         await db.collection(collectionName).insertMany(parsedData);
       }
     }
