@@ -104,7 +104,7 @@ export default function ActivityList({ date, refreshTrigger, onPointsUpdate }: A
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white">Today&apos;s Activities</h2>
           <div className="flex items-center space-x-2">
-            <GardenEmoji date={date} points={totalPoints} className="mr-1" />
+            <GardenEmoji date={date} className="mr-1" />
             <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-full font-medium">
               {totalPoints} Points
             </span>
