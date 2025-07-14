@@ -118,6 +118,11 @@ export default function ActivityForm({ onActivityAdded }: ActivityFormProps) {
     }
   };
 
+  // Helper to generate formatted reference activities string
+  const getReferenceActivitiesString = () => {
+    return PREDEFINED_ACTIVITIES.map(a => `• ${a.name} … ${a.points} pts`).join('  \n');
+  };
+
   // Function to generate AI prompt with user's activity description
   const generateAIPrompt = (activityDescription: string): string => {
     return `Hi AI, please help me assign a FAIR point value to a new activity in my personal
@@ -136,12 +141,7 @@ No custom task may exceed 40 points (the toughest predefined task scores 30).
 If this task can be logged multiple times per day, apply: 100 % → 75 % → 50 %.
 
 ──────────────────────── 4. EXAMPLE REFERENCE TASKS ───────────────
-• Hypertrophy Workout (60 min, RIR≤2) … 30 pts  
-• Moderate Cardio (30–60 min) ………… 12 pts  
-• Track Macros for a full day ………… 10 pts  
-• Focused Workday (6–8 h) ………………… 15 pts  
-• 10-min Meditation …………………………… 5 pts  
-(etc.)
+${getReferenceActivitiesString()}
 
 ──────────────────────── 5. MY NEW ACTIVITY ────────────────────────
 Description: ${activityDescription}
@@ -151,7 +151,10 @@ Suggested Difficulty  (1 /1.5 /2): ___
 Should diminishing returns apply? (yes / no): ___
 
 ──────────────────────── 6. OUTPUT ────────────────────────────────
-**Return one rounded integer for the point value.** Optional: one short reason.
+**Return one rounded integer for the point value.** Important: Reason about it
+for a few lines before coming to a conclusion. This should improve the quality of your
+suggestion. The app is designed to motivate me, so I want to avoid
+over- or underestimating my activities.
 
 Thank you!`;
   };
