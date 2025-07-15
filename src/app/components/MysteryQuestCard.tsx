@@ -113,7 +113,7 @@ export default function MysteryQuestCard({ date, onQuestCompleted }: MysteryQues
       // After animation completes
       setTimeout(() => {
         // Award points and pass quest name
-        onQuestCompleted(quest.points, quest.title);
+        onQuestCompleted(quest.points, quest.text);
 
         // Mark as completed in local storage and database
         localStorage.setItem(`quest_completed_${date}`, 'true');
