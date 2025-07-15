@@ -3,7 +3,8 @@
  *
  * This component displays a list of activities logged by the user for a specific date.
  * It fetches activity data from the API and presents it in a chronological list,
- * showing each activity's name and point value.
+ * showing each activity's name and point value. Supports viewing and deleting activities
+ * for any date, not just the current day.
  *
  * Key features:
  * - Fetches and displays activities for a selected date
@@ -11,6 +12,7 @@
  * - Updates automatically when new activities are added (via refreshTrigger)
  * - Displays a Garden emoji representing the productivity level for the day
  * - Notifies parent components about point updates via onPointsUpdate callback
+ * - Allows deletion of activities from any selected date
  * - Handles loading states and empty states appropriately
  */
 
@@ -102,7 +104,16 @@ export default function ActivityList({ date, refreshTrigger, onPointsUpdate }: A
     <div className="w-full">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Today&apos;s Activities</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+            {date === new Date().toISOString().split('T')[0]
+              ? "Today's Activities"
+              : `Activities for ${new Date(date).toLocaleDateString('en-US', { 
+                  weekday: 'long',
+                  month: 'long', 
+                  day: 'numeric'
+                })}`
+            }
+          </h2>
           <div className="flex items-center space-x-2">
             <GardenEmoji date={date} className="mr-1" />
             <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-full font-medium">

@@ -12,7 +12,7 @@ import Link from "next/link";
 import AboutBox from "./components/AboutBox";
 
 export default function Home() {
-  const [currentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [currentDate, setCurrentDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [totalPoints, setTotalPoints] = useState<number>(0);
 
@@ -23,6 +23,10 @@ export default function Home() {
 
   const handlePointsUpdate = (points: number) => {
     setTotalPoints(points);
+  };
+
+  const handleDateChange = (date: string) => {
+    setCurrentDate(date);
   };
 
   // Handle completed mystery quests
@@ -103,7 +107,11 @@ export default function Home() {
 
         <div className="flex flex-col md:flex-row md:space-x-8 space-y-6 md:space-y-0">
           <div className="w-full md:w-1/2">
-            <ActivityForm onActivityAdded={handleActivityAdded} />
+            <ActivityForm
+              onActivityAdded={handleActivityAdded}
+              date={currentDate}
+              onDateChange={handleDateChange}
+            />
           </div>
 
           <div className="w-full md:w-1/2">

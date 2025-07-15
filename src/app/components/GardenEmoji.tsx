@@ -17,7 +17,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GardenDayData, getGardenEmoji } from '../utils/gardenUtils';
+import { GardenDayData, getGardenEmoji, getFutureDayEmoji } from '../utils/gardenUtils';
 import { UserActivity } from '../types/activities';
 
 interface GardenEmojiProps {
@@ -33,6 +33,15 @@ export default function GardenEmoji({ date, points, className = '', showPoints =
   const [isLoading, setIsLoading] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [hasHypertrophyWorkout, setHasHypertrophyWorkout] = useState(false);
+
+  // Check if the date is in the future
+  const isFutureDate = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateToCheck = new Date(date);
+    dateToCheck.setHours(0, 0, 0, 0);
+    return dateToCheck > today;
+  };
 
   useEffect(() => {
     const fetchGardenData = async () => {
@@ -92,6 +101,11 @@ export default function GardenEmoji({ date, points, className = '', showPoints =
 
   // For today, calculate the emoji based on current points if garden data isn't available
   const getEmoji = () => {
+    // If it's a future date, show the future day emoji
+    if (isFutureDate()) {
+      return getFutureDayEmoji();
+    }
+
     // First check if we have garden data with points
     if (gardenData && gardenData.points !== undefined) {
       // Always recalculate emoji based on points to ensure consistency

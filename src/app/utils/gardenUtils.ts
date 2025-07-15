@@ -20,6 +20,11 @@ export function getGardenEmoji(points: number): string {
   return '🌴'; // Big palm - Exceptional day
 }
 
+// Function to get a future day emoji - different from regular garden emojis
+export function getFutureDayEmoji(): string {
+  return '📅'; // Calendar emoji for future days
+}
+
 // Function to check if a day qualifies for streak protection
 // Returns true if it's a seedling day (≤50 points) but has at least one recovery task
 export function hasStreakProtection(

@@ -113,8 +113,9 @@ export async function GET(request: NextRequest) {
 // Add a new activity
 export async function POST(request: NextRequest) {
   const data = await request.json();
-  const { activityId, customName, customPoints } = data;
-  const date = new Date().toISOString().split('T')[0];
+  const { activityId, customName, customPoints, date: requestDate } = data;
+  // Use provided date or default to today
+  const date = requestDate || new Date().toISOString().split('T')[0];
   const weekStart = getStartOfWeek(new Date(date));
 
   try {

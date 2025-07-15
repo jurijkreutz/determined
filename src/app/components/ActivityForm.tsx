@@ -3,11 +3,12 @@
  *
  * This component provides a form interface for users to log both predefined and custom activities.
  * It allows users to select from a categorized list of predefined activities or create custom
- * activities with user-defined names and point values.
+ * activities with user-defined names and point values. It supports adding activities to past dates.
  *
  * Key features:
  * - Toggle between predefined and custom activity modes
  * - Category-based organization of predefined activities
+ * - Date selection for adding activities to any date (current or past)
  * - Validation for required fields
  * - Error and success feedback via Snackbar component
  * - Point history display and activity tracking
@@ -22,6 +23,7 @@ import { useState } from 'react';
 import { PredefinedActivity } from '../types/activities';
 import { PREDEFINED_ACTIVITIES } from '../data/predefinedActivities';
 import Snackbar from './Snackbar';
+import DateSelector from './DateSelector';
 
 // Group activities by category for better organization
 const activitiesByCategory = PREDEFINED_ACTIVITIES.reduce((acc, activity) => {
@@ -37,9 +39,11 @@ const sortedCategories = Object.keys(activitiesByCategory).sort();
 
 interface ActivityFormProps {
   onActivityAdded: () => void;
+  date: string;
+  onDateChange: (date: string) => void;
 }
 
-export default function ActivityForm({ onActivityAdded }: ActivityFormProps) {
+export default function ActivityForm({ onActivityAdded, date, onDateChange }: ActivityFormProps) {
   const [customName, setCustomName] = useState('');
   const [customPoints, setCustomPoints] = useState(5);
   const [selectedActivityId, setSelectedActivityId] = useState('');
@@ -68,7 +72,10 @@ export default function ActivityForm({ onActivityAdded }: ActivityFormProps) {
           setIsSubmitting(false);
           return;
         }
-        activityData = { activityId: selectedActivityId };
+        activityData = {
+          activityId: selectedActivityId,
+          date: date
+        };
       } else {
         // Custom activity
         if (!customName.trim()) {
@@ -78,7 +85,11 @@ export default function ActivityForm({ onActivityAdded }: ActivityFormProps) {
           setIsSubmitting(false);
           return;
         }
-        activityData = { customName, customPoints };
+        activityData = {
+          customName,
+          customPoints,
+          date: date
+        };
       }
 
       const response = await fetch('/api/activities', {
@@ -93,7 +104,11 @@ export default function ActivityForm({ onActivityAdded }: ActivityFormProps) {
 
       if (response.ok) {
         // Show success message
-        setSnackbarMessage('Activity added successfully!');
+        const dateText = date === new Date().toISOString().split('T')[0]
+          ? 'today'
+          : `on ${new Date(date).toLocaleDateString()}`;
+
+        setSnackbarMessage(`Activity added successfully to ${dateText}!`);
         setSnackbarType('success');
         setSnackbarOpen(true);
 
@@ -191,6 +206,16 @@ Thank you!`;
   return (
     <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
       <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add New Activity</h2>
+
+      {/* Date Selector */}
+      <div className="mb-4">
+        <DateSelector
+          selectedDate={date}
+          onDateChange={onDateChange}
+          maxDate={new Date().toISOString().split('T')[0]} // Can't add activities for future dates
+          label="Select date:"
+        />
+      </div>
 
       <div className="flex space-x-4 mb-4">
         <button

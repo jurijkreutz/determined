@@ -27,6 +27,7 @@ interface MonthCalendarProps {
   currentDayPoints?: number; // Current day's points for live updates
   refreshTrigger?: number; // Trigger refresh when points change
   viewMode?: 'week' | 'month'; // Allow switching between week and month view
+  selectedDate?: string; // ISO date string for the currently selected date
 }
 
 export default function MonthCalendar({
@@ -34,7 +35,8 @@ export default function MonthCalendar({
   year,
   currentDayPoints = 0,
   refreshTrigger = 0,
-  viewMode: initialViewMode = 'week'
+  viewMode: initialViewMode = 'week',
+  selectedDate: initialSelectedDate
 }: MonthCalendarProps) {
   // Use current month/year if not specified
   const now = new Date();
@@ -50,12 +52,12 @@ export default function MonthCalendar({
   const [viewMode, setViewMode] = useState<'week' | 'month'>(initialViewMode);
 
   // State for the day details popup
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDateState, setSelectedDateState] = useState<string | null>(initialSelectedDate || null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   // Open day details popup
   const openDayDetails = (date: string) => {
-    setSelectedDate(date);
+    setSelectedDateState(date);
     setIsPopupOpen(true);
   };
 
@@ -64,7 +66,7 @@ export default function MonthCalendar({
     setIsPopupOpen(false);
     // Wait for animation to complete before clearing the selected date
     setTimeout(() => {
-      setSelectedDate(null);
+      setSelectedDateState(null);
     }, 300);
   };
 
@@ -172,10 +174,18 @@ export default function MonthCalendar({
   const generateWeekCalendarDays = () => {
     const calendarDays = [];
 
-    // In week view, show today as the last day and the 6 days before it
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(now.getDate() - i);
+    // Use the selected date if provided, otherwise use today
+    const centerDate = selectedDateState ? new Date(selectedDateState) : now;
+    const dayOfWeek = centerDate.getDay(); // 0-6, where 0 is Sunday
+
+    // Calculate the first day of the week (Sunday) based on the selected date
+    const weekStartDate = new Date(centerDate);
+    weekStartDate.setDate(centerDate.getDate() - dayOfWeek);
+
+    // Generate 7 days starting from the calculated Sunday
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStartDate);
+      date.setDate(weekStartDate.getDate() + i);
 
       const day = date.getDate();
       const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -240,6 +250,26 @@ export default function MonthCalendar({
     changeMonth(1);
   };
 
+  // Calculate the first and last day of the week for the selected date (for display in week view)
+  const getWeekRangeForSelectedDate = () => {
+    // Use the selected date if provided, otherwise use today
+    const centerDate = selectedDateState ? new Date(selectedDateState) : now;
+    const dayOfWeek = centerDate.getDay(); // 0-6, where 0 is Sunday
+
+    // Calculate the first day of the week (Sunday)
+    const weekStart = new Date(centerDate);
+    weekStart.setDate(centerDate.getDate() - dayOfWeek);
+
+    // Calculate the last day of the week (Saturday)
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    return { weekStart, weekEnd };
+  };
+
+  // Get the week range based on the selected date
+  const { weekStart, weekEnd } = getWeekRangeForSelectedDate();
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
@@ -257,7 +287,7 @@ export default function MonthCalendar({
         <h2 className="text-xl font-bold text-gray-800 dark:text-white">
           {viewMode === 'month'
             ? `${new Date(currentDisplayYear, currentDisplayMonth).toLocaleString('default', { month: 'long' })} ${currentDisplayYear}`
-            : `Week of ${firstDayOfWeek.toLocaleDateString()} - ${lastDayOfWeek.toLocaleDateString()}`}
+            : `Week of ${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`}
         </h2>
         {viewMode === 'month' && (
           <button
@@ -355,9 +385,9 @@ export default function MonthCalendar({
       </div>
 
       {/* Day details popup */}
-      {selectedDate && (
+      {selectedDateState && (
         <DayDetailsPopup
-          date={selectedDate}
+          date={selectedDateState}
           onClose={closeDayDetails}
           isOpen={isPopupOpen}
         />
