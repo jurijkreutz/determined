@@ -4,10 +4,10 @@ import { connectToDatabase } from '@/app/utils/mongodb';
 // Handle individual todo operations by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     const updatedTodo = await request.json();
 
     console.log('Updating todo:', id, updatedTodo);
@@ -36,10 +36,10 @@ export async function PUT(
 // DELETE - Delete a todo
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
 
     const { db } = await connectToDatabase();
 
