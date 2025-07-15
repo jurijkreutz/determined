@@ -23,7 +23,7 @@ import { useRef } from 'react';
 
 interface MysteryQuestCardProps {
   date: string;
-  onQuestCompleted: (points: number) => void;
+  onQuestCompleted: (points: number, questName: string) => void;
 }
 
 export default function MysteryQuestCard({ date, onQuestCompleted }: MysteryQuestCardProps) {
@@ -112,8 +112,8 @@ export default function MysteryQuestCard({ date, onQuestCompleted }: MysteryQues
 
       // After animation completes
       setTimeout(() => {
-        // Award points
-        onQuestCompleted(quest.points);
+        // Award points and pass quest name
+        onQuestCompleted(quest.points, quest.title);
 
         // Mark as completed in local storage and database
         localStorage.setItem(`quest_completed_${date}`, 'true');

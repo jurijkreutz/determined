@@ -8,6 +8,7 @@ import MonthCalendar from "./components/MonthCalendar";
 import StreakDisplay from "./components/StreakDisplay";
 import MysteryQuestCard from "./components/MysteryQuestCard";
 import WorkoutNotes from "./components/WorkoutNotes";
+import ToDoList from "./components/ToDoList";
 import Link from "next/link";
 import AboutBox from "./components/AboutBox";
 
@@ -30,7 +31,7 @@ export default function Home() {
   };
 
   // Handle completed mystery quests
-  const handleQuestCompleted = async (points: number) => {
+  const handleQuestCompleted = async (points: number, questName: string) => {
     try {
       // Add the quest completion as a custom activity
       const response = await fetch('/api/activities', {
@@ -39,7 +40,7 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          customName: 'Mystery Quest Completed',
+          customName: `Mystery Quest: ${questName}`,
           customPoints: points
         }),
       });
@@ -92,6 +93,29 @@ export default function Home() {
         <div className="mb-8">
           <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Today&apos;s Priorities</h2>
           <DailySuggestionSlots onActivityAdded={handleActivityAdded} />
+        </div>
+
+        {/* Today's To-Dos */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">To-Do List</h2>
+          <ToDoList onPointsChange={(points, todoTitle) => {
+            // Add custom activity for To-Do points with the specific to-do title
+            if (points !== 0 && todoTitle) {
+              fetch('/api/activities', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  customName: points > 0 ? `To-Do: ${todoTitle}` : `Snoozed To-Do: ${todoTitle}`,
+                  customPoints: points
+                }),
+              }).then(() => {
+                // Refresh the activity list
+                setRefreshTrigger(prev => prev + 1);
+              });
+            }
+          }} />
         </div>
 
         {/* Month Calendar with Garden Progress */}

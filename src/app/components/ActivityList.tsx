@@ -77,11 +77,31 @@ export default function ActivityList({ date, refreshTrigger, onPointsUpdate }: A
       });
 
       if (response.ok) {
+        // Find the activity that was deleted
+        const removedActivity = activities.find(activity => activity.id === id);
+
+        // Check if this was a To-Do activity
+        if (removedActivity && removedActivity.name.startsWith('To-Do: ')) {
+          // Extract the actual To-Do title
+          const todoTitle = removedActivity.name.replace('To-Do: ', '');
+
+          // Call the API to reset the To-Do status to "open"
+          await fetch('/api/todos/reset-by-activity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              title: todoTitle,
+              date: date
+            }),
+          });
+        }
+
         // Remove the activity from state
         setActivities(activities.filter(activity => activity.id !== id));
 
         // Update total points
-        const removedActivity = activities.find(activity => activity.id === id);
         if (removedActivity) {
           setTotalPoints(totalPoints - removedActivity.points);
           onPointsUpdate?.(totalPoints - removedActivity.points); // Call the onPointsUpdate callback if provided
