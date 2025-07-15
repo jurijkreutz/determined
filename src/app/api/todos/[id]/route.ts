@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/app/utils/mongodb';
 
-// Handle individual todo operations by ID
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+/**
+ * PUT handler for updating a specific To-Do by ID
+ *
+ * This route handles updating a To-Do task, including changing its status (open, done, snoozed, missed)
+ */
+export async function PUT(request: NextRequest) {
   try {
-    const id = params.id;
+    // Extract ID from the URL path
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1];
+
     const updatedTodo = await request.json();
 
     console.log('Updating todo:', id, updatedTodo);
@@ -33,13 +38,17 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete a todo
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+/**
+ * DELETE handler for removing a specific To-Do by ID
+ *
+ * This route handles deleting a To-Do task from the database
+ */
+export async function DELETE(request: NextRequest) {
   try {
-    const id = params.id;
+    // Extract ID from the URL path
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1];
 
     const { db } = await connectToDatabase();
 
