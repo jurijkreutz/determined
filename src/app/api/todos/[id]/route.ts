@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/app/utils/mongodb';
 
-type Params = { params: { id: string } }
-
 // Handle individual todo operations by ID
 export async function PUT(
   request: NextRequest,
-  params: Params
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.params.id;
+    const id = params.id;
     const updatedTodo = await request.json();
 
     console.log('Updating todo:', id, updatedTodo);
@@ -38,10 +36,10 @@ export async function PUT(
 // DELETE - Delete a todo
 export async function DELETE(
   request: NextRequest,
-  params: Params
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.params.id;
+    const id = params.id;
 
     const { db } = await connectToDatabase();
 
