@@ -7,6 +7,7 @@ import DailySuggestionSlots from "./components/DailySuggestionSlots";
 import MonthCalendar from "./components/MonthCalendar";
 import StreakDisplay from "./components/StreakDisplay";
 import MysteryQuestCard from "./components/MysteryQuestCard";
+import WorkoutNotes from "./components/WorkoutNotes";
 import Link from "next/link";
 import AboutBox from "./components/AboutBox";
 
@@ -112,6 +113,11 @@ export default function Home() {
               onPointsUpdate={handlePointsUpdate}
             />
           </div>
+        </div>
+
+        {/* Workout Notes */}
+        <div className="mt-8">
+          <WorkoutNotes />
         </div>
       </main>
       <AboutBox />
