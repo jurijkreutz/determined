@@ -30,6 +30,18 @@ interface ToDo {
 // Client-side component that runs the daily garden refresh at 5 AM Vienna time
 export default function GardenRefresher() {
   useEffect(() => {
+    // Refresh garden data
+    const refreshGarden = async () => {
+      try {
+        const today = getViennaDate().split('T')[0];
+        await fetch(`/api/garden/sync?date=${today}`, {
+          method: 'POST',
+        });
+      } catch (error) {
+        console.error('Error refreshing garden:', error);
+      }
+    };
+
     const refreshInterval: NodeJS.Timeout = setInterval(refreshGarden, 2 * 60 * 1000);
 
     // Check for processing missed todos
@@ -76,18 +88,6 @@ export default function GardenRefresher() {
         }
       } catch (error) {
         console.error('Error checking/processing missed todos:', error);
-      }
-    };
-
-    // Refresh garden data
-    const refreshGarden = async () => {
-      try {
-        const today = getViennaDate().split('T')[0];
-        await fetch(`/api/garden/sync?date=${today}`, {
-          method: 'POST',
-        });
-      } catch (error) {
-        console.error('Error refreshing garden:', error);
       }
     };
 
