@@ -14,60 +14,92 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getViennaDate, isGardenRefreshTime } from '../utils/gardenUtils';
+import { useEffect } from 'react';
+import { getViennaDate } from '../utils/gardenUtils';
+
+// Define ToDo interface to eliminate any type
+interface ToDo {
+  id: string;
+  title: string;
+  status: string;
+  date: string;
+  points: number;
+  createdAt: number;
+}
 
 // Client-side component that runs the daily garden refresh at 5 AM Vienna time
 export default function GardenRefresher() {
-  const [lastRefreshDate, setLastRefreshDate] = useState<string>('');
-
   useEffect(() => {
-    // Check if we need to refresh garden data
-    const checkAndRefreshGarden = async () => {
-      const today = getViennaDate();
+    const refreshInterval: NodeJS.Timeout = setInterval(refreshGarden, 2 * 60 * 1000);
 
-      // Skip if we've already refreshed today
-      if (today === lastRefreshDate) {
-        return;
-      }
-
-      // Check if it's refresh time (5 AM Vienna time)
-      if (isGardenRefreshTime()) {
-        // Calculate yesterday's date
-        const yesterday = new Date();
+    // Check for processing missed todos
+    const checkAndProcessMissedTodos = async () => {
+      try {
+        // Get yesterday's date in Vienna timezone
+        const yesterday = new Date(getViennaDate());
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayString = yesterday.toISOString().split('T')[0];
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-        try {
-          // Call the API to update garden data for yesterday
-          const response = await fetch('/api/garden', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ date: yesterdayString }),
-          });
+        // Get today's date
+        const todayStr = getViennaDate().split('T')[0];
 
-          if (response.ok) {
-            console.log('Garden data refreshed for', yesterdayString);
-            setLastRefreshDate(today);
-          } else {
-            console.error('Failed to refresh garden data');
+        // Check localStorage to see if we've already processed todos for today
+        const lastProcessed = localStorage.getItem('lastMissedTodoProcessing');
+
+        // Only process once per day
+        if (lastProcessed !== todayStr) {
+          console.log('Checking for missed todos from yesterday...');
+
+          // First check if there are any open todos from yesterday
+          const todosResponse = await fetch(`/api/todos?date=${yesterdayStr}`);
+          if (todosResponse.ok) {
+            const todos = await todosResponse.json();
+            const openTodos = todos.filter((todo: ToDo) => todo.status === 'open');
+
+            if (openTodos.length > 0) {
+              console.log(`Found ${openTodos.length} open todos from yesterday, processing...`);
+
+              // Process the missed todos
+              const processResponse = await fetch('/api/todos/process-missed?force=true');
+              if (processResponse.ok) {
+                const result = await processResponse.json();
+                console.log('Processed missed todos:', result);
+
+                // Mark as processed for today
+                localStorage.setItem('lastMissedTodoProcessing', todayStr);
+              }
+            } else {
+              // No open todos to process, but still mark as checked
+              localStorage.setItem('lastMissedTodoProcessing', todayStr);
+            }
           }
-        } catch (error) {
-          console.error('Error refreshing garden data:', error);
         }
+      } catch (error) {
+        console.error('Error checking/processing missed todos:', error);
       }
     };
 
-    // Run the check immediately on mount
-    checkAndRefreshGarden();
+    // Refresh garden data
+    const refreshGarden = async () => {
+      try {
+        const today = getViennaDate().split('T')[0];
+        await fetch(`/api/garden/sync?date=${today}`, {
+          method: 'POST',
+        });
+      } catch (error) {
+        console.error('Error refreshing garden:', error);
+      }
+    };
 
-    // Then set up a regular interval to check (every 5 minutes)
-    const intervalId = setInterval(checkAndRefreshGarden, 5 * 60 * 1000);
+    // Initial refresh and missed todo processing when component mounts
+    refreshGarden();
+    checkAndProcessMissedTodos();
 
-    return () => clearInterval(intervalId);
-  }, [lastRefreshDate]);
+    // Cleanup
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, []);
 
   // This component doesn't render anything visible
   return null;

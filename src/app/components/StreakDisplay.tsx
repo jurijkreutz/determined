@@ -15,7 +15,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { getViennaDate } from '../utils/gardenUtils';
 
 interface StreakDisplayProps {
   date: string;
@@ -27,50 +28,165 @@ export default function StreakDisplay({ date, refreshTrigger = 0 }: StreakDispla
     streakCount?: number;
     streakStatus?: 'active' | 'paused' | 'reset';
     streakMessage?: string;
+    points?: number;
   } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [previousStreakCount, setPreviousStreakCount] = useState<number>(0);
+  const [currentPoints, setCurrentPoints] = useState<number>(0);
 
-  useEffect(() => {
-    const fetchStreakData = async () => {
-      setIsLoading(true);
+  // Use refs to prevent infinite loop in useEffect dependencies
+  const lastFetchTimeRef = useRef<number>(0);
+  const throttleTimeRef = useRef<number>(2000); // Minimum time between fetches in ms
+  const isMountedRef = useRef<boolean>(false);
+
+  // Function to determine accurate streak message based on current points
+  const getUpdatedStreakMessage = useCallback((points: number, prevCount: number) => {
+    // If no points yet today but had previous streak
+    if (points === 0 && prevCount > 0) {
+      return `Continue your ${prevCount} day streak! Add activities to maintain your momentum.`;
+    }
+
+    // If we have some points but not enough for productive day yet
+    if (points > 0 && points < 51 && prevCount > 0) {
+      return `You need ${51 - points} more points today to continue your ${prevCount} day streak.`;
+    }
+
+    // If no previous streak and no points yet
+    if (points === 0 && prevCount === 0) {
+      return 'First day of your streak! Earn 51+ points to start your streak.';
+    }
+
+    // If no previous streak but some points
+    if (points > 0 && points < 51 && prevCount === 0) {
+      return `You've earned ${points} points. Need ${51 - points} more to start your streak!`;
+    }
+
+    // For cases when we have enough points already (51+)
+    if (points >= 51 && prevCount > 0) {
+      return `You've maintained your streak for ${prevCount + 1} days! Great work!`;
+    }
+
+    if (points >= 51 && prevCount === 0) {
+      return `You've started a new streak! Keep it going tomorrow.`;
+    }
+
+    // Default fallback message
+    return 'Add activities to grow your streak!';
+  }, []);
+
+  // Function to fetch the previous day's streak count (only once)
+  const fetchPreviousStreak = useCallback(async () => {
+    if (date === getViennaDate()) {
+      const yesterday = new Date(date);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
       try {
-        const response = await fetch(`/api/garden?date=${date}`);
-        if (response.ok) {
-          const data = await response.json();
-
-          // If no data or missing streak info, create default first-day values
-          if (!data || (!data.streakCount && !data.streakStatus && !data.streakMessage)) {
-            setStreakData({
-              streakCount: 0,
-              streakStatus: 'active',
-              streakMessage: 'First day of your streak! Earn 51+ points to start your streak.'
-            });
-          } else {
-            setStreakData(data);
+        const prevResponse = await fetch(`/api/garden?date=${yesterdayStr}`);
+        if (prevResponse.ok) {
+          const prevData = await prevResponse.json();
+          if (prevData && prevData.streakCount && prevData.streakStatus === 'active') {
+            setPreviousStreakCount(prevData.streakCount);
           }
-        } else {
-          // Default values for new users with no data
-          setStreakData({
-            streakCount: 0,
-            streakStatus: 'active',
-            streakMessage: 'First day of your streak! Earn 51+ points to start your streak.'
-          });
         }
-      } catch (error) {
-        console.error('Error fetching streak data:', error);
-        // Default values if there's an error
-        setStreakData({
-          streakCount: 0,
-          streakStatus: 'active',
-          streakMessage: 'First day of your streak! Earn 51+ points to start your streak.'
-        });
-      } finally {
-        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching previous streak data:', err);
       }
+    }
+  }, [date]);
+
+  // Function to fetch latest data - throttled to prevent too many requests
+  const fetchLatestData = useCallback(async (force = false) => {
+    const now = Date.now();
+
+    // Skip if not enough time has passed since last fetch, unless forced
+    if (!force && now - lastFetchTimeRef.current < throttleTimeRef.current) {
+      return;
+    }
+
+    // Update last fetch time
+    lastFetchTimeRef.current = now;
+
+    try {
+      // Fetch activities directly for the most up-to-date point total
+      const activitiesResponse = await fetch(`/api/activities?date=${date}`);
+      if (activitiesResponse.ok) {
+        const data = await activitiesResponse.json();
+
+        // Define activity type instead of using 'any'
+        interface Activity {
+          id: string;
+          points: number;
+          name: string;
+          timestamp: number;
+        }
+
+        // Calculate points from activities
+        const calculatedPoints = (data.activities || []).reduce(
+          (sum: number, activity: Activity) => sum + activity.points, 0
+        );
+
+        // Only update if points have changed to prevent infinite renders
+        if (calculatedPoints !== currentPoints || force) {
+          setCurrentPoints(calculatedPoints);
+
+          // Update streak message based on current points
+          const updatedMessage = getUpdatedStreakMessage(calculatedPoints, previousStreakCount);
+
+          // Update streak data
+          setStreakData(prev => ({
+            ...prev,
+            streakMessage: updatedMessage,
+            points: calculatedPoints,
+            streakCount: calculatedPoints >= 51 ? previousStreakCount + 1 : previousStreakCount
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }, [date, currentPoints, previousStreakCount, getUpdatedStreakMessage]);
+
+  // Initial setup - runs only once when component mounts
+  useEffect(() => {
+    const initialize = async () => {
+      setIsLoading(true);
+      await fetchPreviousStreak();
+      await fetchLatestData(true);
+      setIsLoading(false);
+      isMountedRef.current = true;
     };
 
-    fetchStreakData();
-  }, [date, refreshTrigger]);
+    initialize();
+
+    // Cleanup function
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [fetchPreviousStreak, fetchLatestData]);
+
+  // Handle refreshTrigger changes (when activities are explicitly added)
+  useEffect(() => {
+    if (isMountedRef.current) {
+      fetchLatestData(true);
+    }
+  }, [refreshTrigger, fetchLatestData]);
+
+  // Set up polling with reasonable interval
+  useEffect(() => {
+    // Only set up polling if component is mounted
+    if (!isMountedRef.current) return;
+
+    // Polling interval (3 seconds is reasonable)
+    const intervalId = setInterval(() => {
+      fetchLatestData();
+    }, 3000);
+
+    // Cleanup function
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [fetchLatestData]);
 
   if (isLoading) {
     return (

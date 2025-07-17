@@ -149,23 +149,59 @@ Based on daily point totals:
    - `MonthCalendar` shows monthly garden progress
    - `StreakDisplay` shows current streak status
 
-## Getting Started
+4. **Todo System Flow**:
+   - `ToDoList` displays user tasks (maximum 5 per day)
+   - Todo items can be created, updated, and deleted via `/api/todos` endpoints
+   - Users earn points when completing tasks (capped at 40 points per day)
+   - At midnight, open tasks are automatically marked as "missed" with a 20% point penalty
+   - Users can "snooze" tasks to the next day (with a 5-point penalty)
 
-1. Install dependencies:
-   ```
-   npm install
-   ```
+5. **Data Backup & Restore Flow**:
+   - `BackupRestore` component provides UI for data management
+   - `/api/backup` handles exporting and importing user data
 
-2. Set up MongoDB:
-   - Create a MongoDB Atlas account or use a local MongoDB instance
-   - Add your MongoDB URI to `.env.local`
+## Additional Components
 
-3. Run the development server:
-   ```
-   npm run dev
-   ```
+### Todo Management
+- **ToDoList.tsx**: UI for task management with the following features:
+  - Shows today's To-Do items with their status (open, done, snoozed, missed)
+  - Allows marking items as done (earning points, capped at 40 per day)
+  - Allows snoozing items (moving to tomorrow, with 5-point penalty)
+  - Supports editing and deleting tasks
+  - Maximum 5 tasks per day with 1-20 points each
+- **todoProcessing.ts**: Handles end-of-day processing for missed tasks:
+  - Runs at 00:05 Vienna time daily
+  - Marks open tasks from previous day as "missed"
+  - Applies 20% point penalty to the daily garden data
+- API endpoints:
+  - `/api/todos` - CRUD operations for todos
+  - `/api/todos/process-missed` - Processes missed todos at day's end
+  - `/api/todos/reset-by-activity` - Resets todos when activity is deleted
 
-4. Access the application at http://localhost:3000
+### Workout Tracking
+- **WorkoutNotes.tsx**: Interface for logging workout details
+- **workouts.ts**: Type definitions for workout data
+- `/api/workouts` endpoint for workout data management
+
+
+### Suggestions & Planning
+- **DailySuggestionSlots.tsx**: Provides activity suggestions based on user patterns
+- **DateSelector.tsx**: UI component for selecting dates
+
+### Data Management
+- **BackupRestore.tsx**: Interface for exporting/importing user data
+- **storageUtils.ts**: Utilities for data persistence and management
+- `/api/backup` endpoint for data operations
+
+### Utility Components
+- **GardenRefresher.tsx** and **GardenRefresherWrapper.tsx**: Handle garden data refreshing
+- **Snackbar.tsx**: Provides toast notifications throughout the app
+
+## Configuration Files
+- **next.config.ts**: Next.js configuration
+- **tsconfig.json**: TypeScript configuration
+- **postcss.config.mjs**: PostCSS configuration for TailwindCSS
+- **eslint.config.mjs**: ESLint rules for code quality
 
 ## Component Documentation and Maintenance Guidelines
 
