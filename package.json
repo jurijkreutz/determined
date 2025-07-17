@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "check-all": "npm run lint && npm run type-check",
+    "pre-push": "npm run check-all"
   },
   "dependencies": {
     "@types/papaparse": "^5.3.16",

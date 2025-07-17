@@ -235,6 +235,12 @@ When working with this codebase, please follow these guidelines:
     */
    ```
 
+5. **Type and Lint Checking**: Before completing any task, run the following command to check for type errors and linting issues:
+   ```bash
+   npm run check-all
+   ```
+   This will run both TypeScript type checking (`tsc --noEmit`) and ESLint. Fix any issues before considering your task complete. This prevents type errors from being discovered only during production builds.
+
 Following these guidelines will ensure that the documentation remains accurate and helpful for all users of this codebase.
 
 IMPORTANT for AI AGENT: Make sure that you check for linting errors and fix them before finishing your changes!
