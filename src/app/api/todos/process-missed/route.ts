@@ -16,8 +16,8 @@ export async function GET(request: Request) {
       }, { status: 400 });
     }
 
-    // Process missed todos, passing the force parameter
-    const result = await processMissedToDos(forceProcess);
+    // Process missed todos (without parameters since we removed the forceProcess parameter)
+    const result = await processMissedToDos();
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error processing missed todos:', error);
